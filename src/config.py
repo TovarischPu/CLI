@@ -1,12 +1,8 @@
-"""Модуль с моделью конфигурации приложения."""
-
 from dataclasses import dataclass
 
 
 @dataclass
 class AppConfig:
-    """Конфигурация, собираемая из аргументов командной строки."""
-
     package: str
     source: str
     test_mode: bool
