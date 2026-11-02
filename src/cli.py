@@ -1,5 +1,3 @@
-"""Модуль разбора аргументов командной строки."""
-
 import argparse
 from typing import Sequence
 
@@ -47,7 +45,6 @@ def _build_parser() -> argparse.ArgumentParser:
 
 
 def parse_args(argv: Sequence[str]) -> AppConfig:
-    """Разобрать аргументы и вернуть валидную конфигурацию."""
     parser = _build_parser()
     args = parser.parse_args(argv)
     package = validate_package(args.package)
@@ -65,7 +62,6 @@ def parse_args(argv: Sequence[str]) -> AppConfig:
 
 
 def safe_parse_args(argv: Sequence[str]) -> AppConfig:
-    """Разобрать аргументы, превращая ошибки в ValidationError."""
     try:
         return parse_args(argv)
     except SystemExit as exc:

@@ -14,7 +14,12 @@ _MAX_DEPTH = 100
 def validate_package(package: str) -> str:
     if not package or not package.strip():
         raise ValidationError("Имя пакета не может быть пустым")
-    return package.strip()
+    package = package.strip()
+    if len(package.split(":")) != 3:
+        raise ValidationError(
+            "Формат пакета должен быть groupId:artifactId:version"
+        )
+    return package
 
 def validate_source(source: str, test_mode: bool) -> str:
     if not source or not source.strip():
