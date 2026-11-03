@@ -1,10 +1,37 @@
 import sys
-from typing import Sequence
+from typing import Sequence, List, Dict
 
 from .cli import safe_parse_args
 from .downloader import download_text
+from .graph import DependencyGraph, GraphBuilder, parse_test_file
 from .parser import build_pom_url, parse_direct_dependencies
 from .validation import ValidationError
+
+
+def _fetch_real_deps(pkg: str, source: str) -> List[str]:
+    url = build_pom_url(source, pkg)
+    print(f"[INFO] Загрузка: {url}")
+    try:
+        xml_content = download_text(url)
+        deps = parse_direct_dependencies(xml_content)
+        return [f"{d['groupId']}:{d['artifactId']}:{d['version']}" for d in deps]
+    except RuntimeError as exc:
+        print(f"[WARN] {exc}")
+        return []
+
+
+def _fetch_test_deps(pkg: str, data: Dict[str, List[str]]) -> List[str]:
+    return data.get(pkg, [])
+
+
+def _print_graph(graph: DependencyGraph) -> None:
+    print("\nПостроенный граф зависимостей:")
+    for source, targets in graph.adjacency_list.items():
+        if targets:
+            targets_str = ", ".join(targets)
+            print(f"  {source} -> {targets_str}")
+        else:
+            print(f"  {source} -> (нет зависимостей)")
 
 
 def run(argv: Sequence[str]) -> int:
@@ -19,30 +46,31 @@ def run(argv: Sequence[str]) -> int:
     print("=== Конец конфигурации ===")
 
     if config.test_mode:
-        print("\n[INFO] Тестовый режим: скачивание пропущено.")
-        return 0
+        print(f"\n[INFO] Тестовый режим. Чтение файла: {config.source}")
+        try:
+            test_data = parse_test_file(config.source)
+            fetch_func = lambda pkg: _fetch_test_deps(pkg, test_data)
+        except FileNotFoundError:
+            print(f"[ERROR] Файл не найден: {config.source}", file=sys.stderr)
+            return 1
+    else:
+        fetch_func = lambda pkg: _fetch_real_deps(pkg, config.source)
 
-    url = build_pom_url(config.source, config.package)
-    print(f"\n[INFO] Загрузка pom.xml: {url}")
+    builder = GraphBuilder(
+        max_depth=config.max_depth,
+        filter_str=config.filter_substring,
+        fetch_func=fetch_func,
+    )
     
-    try:
-        xml_content = download_text(url)
-    except RuntimeError as exc:
-        print(f"[ERROR] {exc}", file=sys.stderr)
-        return 1
-
-    deps = parse_direct_dependencies(xml_content)
-    print(f"\nПрямые зависимости для {config.package}:")
-    if not deps:
-        print(" - зависимости не найдены")
-    for dep in deps:
-        print(f" - {dep['groupId']}:{dep['artifactId']}")
-        
+    graph = builder.build(config.package)
+    _print_graph(graph)
+    
     return 0
 
 
 def main() -> None:
     sys.exit(run(sys.argv[1:]))
+
 
 if __name__ == "__main__":
     main()

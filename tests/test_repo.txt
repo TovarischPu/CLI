@@ -1,0 +1,6 @@
+A: B, C_IGNORE
+B: D, E
+C_IGNORE: F
+D: A
+E:
+F:
