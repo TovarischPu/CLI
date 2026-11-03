@@ -47,7 +47,7 @@ def _build_parser() -> argparse.ArgumentParser:
 def parse_args(argv: Sequence[str]) -> AppConfig:
     parser = _build_parser()
     args = parser.parse_args(argv)
-    package = validate_package(args.package)
+    package = validate_package(args.package, args.test_mode)
     source = validate_source(args.source, args.test_mode)
     max_depth = validate_max_depth(args.max_depth)
     filter_substring = validate_filter(args.filter)
