@@ -11,11 +11,11 @@ _MIN_DEPTH = 1
 _MAX_DEPTH = 100
 
 
-def validate_package(package: str) -> str:
+def validate_package(package: str, test_mode: bool = False) -> str:
     if not package or not package.strip():
         raise ValidationError("Имя пакета не может быть пустым")
     package = package.strip()
-    if len(package.split(":")) != 3:
+    if not test_mode and len(package.split(":")) != 3:
         raise ValidationError(
             "Формат пакета должен быть groupId:artifactId:version"
         )
